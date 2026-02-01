@@ -35,22 +35,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} text-white antialiased bg-black`}>
-          <header className="bg-[#000000]  flex justify-between items-center p-4 gap-4 h-16">
-            <span className="font-bold text-lg">Alfred</span>
-            <div className='flex items-center gap-4'>
-            <SignedOut>
-              <SignInButton>
-                <Button className='bg-black' >Sign In</Button>
-              </SignInButton>
-              <SignUpButton>
-                <Button className='bg-black ' >Sign Up</Button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-            </div>
-          </header>
+          
           {children}
         </body>
       </html>
