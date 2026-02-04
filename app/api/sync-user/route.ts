@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       email,
       createdAt: new Date(),
     });
-
+    
     return NextResponse.json({ status: "created" }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json(

@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { UserButton } from "@clerk/nextjs"
 
 // Menu items.
 const items = [
@@ -64,7 +65,9 @@ export function AppSidebar() {
         </SidebarGroup>
         
       </SidebarContent>
-      
+      <SidebarFooter className="bg-black text-white p-4">
+        <UserButton />
+      </SidebarFooter>
     </Sidebar>
   )
 }

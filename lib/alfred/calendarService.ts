@@ -1,15 +1,20 @@
 import { adminDb } from "@/lib/firebaseAdmin";
-import { CalendarEvent } from "./calendarTypes";
+import { CalendarEvent, TodoItem, FinalSchedule } from "./calendarTypes"; // you can define FinalSchedule type
 
-export async function getUserCalendarEvents(userId: string): Promise<CalendarEvent[]> {
-  const snapshot = await adminDb
-    .collection("events")
-    .where("userId", "==", userId)
-    .where("isDeleted", "==", false)
-    .get();
+export async function getUserFinalSchedule(userId: string): Promise<FinalSchedule | null> {
+  const docRef = adminDb
+    .collection("users")
+    .doc(userId)
+    .collection("finalSchedule")
+    .doc("current");
 
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as CalendarEvent[];
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    console.warn(`No final schedule found for user ${userId}`);
+    return null;
+  }
+
+  // Return the final schedule data
+  return docSnap.data() as FinalSchedule;
 }

@@ -1,36 +1,47 @@
-import { NextResponse } from "next/server";
 import { buildAlfredSystemPrompt } from "@/lib/alfred/prompt";
+import { adminDb } from "@/lib/firebaseAdmin";
 import { vapi } from "@/lib/vapi";
-import { auth } from "@clerk/nextjs/server";
-
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  console.log(body);
-  const userContext = {
-    userId: body.clerkId,
-    name: body.name.split(" ")[0],
-    phoneNumber: body.phoneNumber,
-    callReason: "intro" as const,
-  };
+  try {
+    const payload = await req.json();
+    const eventType = payload?.type;
+    const userId = payload?.userId;
+    const eventId = payload?.itemId;
 
-
-  console.log(body.userId)
-  const systemPrompt = await buildAlfredSystemPrompt({
-    name: userContext.name,
-    userId: body.clerkId,
-    callReason: userContext.callReason,
-  });
-
-  const call = await vapi.calls.create({
     
-    phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID!,
-    customer: {
-      number: userContext.phoneNumber,
-      name: userContext.name,
-    },
-    assistant: {
-      
+    
+    // getting user phone number for reminder call
+    const userDoc = await adminDb.collection("users").doc(userId).get();
+    const userData = userDoc.data();
+    const phoneNumber = userData?.phoneNumber;
+    const name = userData?.name?.split(" ")[0] || "there";
+    console.log("Reminder Call Payload:", { payload, phoneNumber });
+
+    if (!userId || !eventId || !eventType || !phoneNumber) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+    
+    const callReason = "reminder" as const;
+    // Trigger VAPI Call
+    const systemPrompt = await buildAlfredSystemPrompt({
+      name: name,
+      userId: userId,
+      callReason,
+    });
+    
+    // starting vapi call using vapi sdk
+    const call = await vapi.calls.create({
+      phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID!,
+      customer: {
+        number: phoneNumber,
+        name: name,
+      },
+      assistant: {
       model: {
         provider: "openai",
         model: "gpt-4o",
@@ -98,11 +109,17 @@ export async function POST(req: Request) {
         provider: "vapi",
         voiceId: "Elliot",
       },
-      firstMessage: `Hey ${userContext.name}, it’s Alfred. How can I help you today?`,
+      firstMessage: `This is a call to remind you about your ${eventType} titled "${payload.title}".`,
       
     },
     
   });
-
-  return Response.json({ success: true, callId: call });
+  return NextResponse.json({ success: true, });
+  } catch (error: any) {
+    console.error("Error in reminder call:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
+  } 
 }

@@ -4,7 +4,6 @@ import { adminDb } from "@/lib/firebaseAdmin";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { userId, task, dueTime, priority } = body;
 
     if (!userId || !task) {
@@ -14,14 +13,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const docRef = await adminDb.collection("todos").add({
-      userId,
-      task,
-      dueTime: dueTime || null,
-      priority: priority || "normal",
-      isDone: false,
-      createdAt: new Date().toISOString(),
-    });
+   
+    const docRef = await adminDb
+      .collection("todos")
+      .doc(userId)
+      .collection("all")
+      .add({
+        task,
+        dueTime: dueTime || null,
+        priority: priority || "normal",
+        isDone: false,
+        createdAt: new Date().toISOString(),
+      });
 
     return NextResponse.json({
       success: true,
