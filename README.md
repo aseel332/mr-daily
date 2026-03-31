@@ -135,8 +135,8 @@ users/{userId}/schedule/{itemId}
 
 - [x] Voice-based scheduling (Vapi)
 - [x] Event & todo creation
-- [ ] Autonomous schedule builder
-- [ ] Calendar integrations (Google/Apple)
+- [X] Autonomous schedule builder
+- [X] Calendar integrations (Google/Apple)
 - [ ] Smarter follow-up system
 - [ ] Team/workspace features
 
