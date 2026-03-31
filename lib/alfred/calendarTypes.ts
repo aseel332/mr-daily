@@ -22,6 +22,7 @@ export interface CalendarEvent {
   repeatEnd: string | null;   // ISO string
 
   priority?: "low" | "medium" | "high";
+  color?: "blue" | "cyan" | "violet" | "green" | "amber" | "rose" | "red" | "orange" | null;
 
   isDeleted: boolean;
 }

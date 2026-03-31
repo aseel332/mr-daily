@@ -19,6 +19,7 @@ export interface CalendarEvent {
   priority?: "low" | "medium" | "high" | string | null;
   location?: string | null;
   notes?: string | null;
+  color?: "blue" | "cyan" | "violet" | "green" | "amber" | "rose" | "red" | "orange" | null;
   isDeleted?: boolean;
   isDone?: boolean;
 }

@@ -2,6 +2,7 @@ import { buildAlfredSystemPrompt } from "@/lib/alfred/prompt";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { vapi } from "@/lib/vapi";
 import { NextResponse } from "next/server";
+import { getAlfredTools } from "@/lib/alfred/tools";
 
 export async function POST(req: Request) {
   try {
@@ -10,13 +11,12 @@ export async function POST(req: Request) {
     const userId = payload?.userId;
     const eventId = payload?.itemId;
 
-    
-    
+
     // getting user phone number for reminder call
     const userDoc = await adminDb.collection("users").doc(userId).get();
     const userData = userDoc.data();
     const phoneNumber = userData?.phoneNumber;
-    const name = userData?.name?.split(" ")[0] || "there";
+    const name = userData?.fullName?.split(" ")[0] || "there";
     console.log("Reminder Call Payload:", { payload, phoneNumber });
 
     if (!userId || !eventId || !eventType || !phoneNumber) {
@@ -25,7 +25,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    
+    console.log("User Data:", userData);
+
     const callReason = "reminder" as const;
     // Trigger VAPI Call
     const systemPrompt = await buildAlfredSystemPrompt({
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       userId: userId,
       callReason,
     });
-    
+
     // starting vapi call using vapi sdk
     const call = await vapi.calls.create({
       phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID!,
@@ -42,84 +43,36 @@ export async function POST(req: Request) {
         name: name,
       },
       assistant: {
-      model: {
-        provider: "openai",
-        model: "gpt-4o",
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_event",
-              description:
-                "Create a calendar event for the user when they mention meetings, classes, deadlines, or reminders with a time.",
-              parameters: {
-                type: "object",
-                properties: {
-                  userId: { type: "string" },
-                  title: { type: "string" },
-                  startTime: { type: "string", description: "ISO string" },
-                  endTime: { type: "string", description: "ISO string" },
-                  location: { type: "string" },
-                  notes: { type: "string" },
-                },
-                required: ["userId", "title", "startTime", "endTime"],
-              },
-            },
-            server:{
-              url: "https://poriferous-ean-unkept.ngrok-free.dev/api/vapi/webhook",
+        model: {
+          provider: "openai",
+          model: "gpt-4o",
+          tools: getAlfredTools() as any,
+          temperature: 0.5,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
             }
-          },
-          {
-            type: "function",
-            function: {
-              name: "create_todo",
-              description:
-                "Create a todo/task for the user when they mention something to do, even if no exact time is given.",
-              parameters: {
-                type: "object",
-                properties: {
-                  userId: { type: "string" },
-                  task: { type: "string" },
-                  dueTime: { type: "string", description: "ISO string or null" },
-                  priority: {
-                    type: "string",
-                    enum: ["low", "normal", "high"],
-                  },
-                },
-                required: ["userId", "task"],
-              },
-            },
-            server:{
-              url: "https://poriferous-ean-unkept.ngrok-free.dev/api/vapi/webhook",
-            }
-          },
-        ],
-        temperature: 0.5,
-        messages: [
-          {
-            role: "system", 
-            content: systemPrompt
-          }
-        ],
-        
-        
+          ],
+
+
+        },
+
+        voice: {
+          provider: "vapi",
+          voiceId: "Elliot",
+        },
+        firstMessage: `Hey ${name}, this is Alfred. I'm calling to remind you about your ${eventType} titled "${payload.title}".`,
+
       },
 
-      voice: {
-        provider: "vapi",
-        voiceId: "Elliot",
-      },
-      firstMessage: `This is a call to remind you about your ${eventType} titled "${payload.title}".`,
-      
-    },
-    
-  });
-  return NextResponse.json({ success: true, });
+    });
+    return NextResponse.json({ success: true, });
   } catch (error: any) {
     console.error("Error in reminder call:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Internal Server Error" },
       { status: 500 }
     );
-  } 
+  }
 }

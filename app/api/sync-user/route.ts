@@ -20,7 +20,9 @@ export async function POST(req: Request) {
     const userDoc = await userRef.get();
 
     if (userDoc.exists) {
-      return NextResponse.json({ status: "exists" }, { status: 200 });
+      const userData = userDoc.data();
+      const needsPhone = !userData?.phoneNumber;
+      return NextResponse.json({ status: "exists", needsPhone }, { status: 200 });
     }
 
     await userRef.set({
@@ -28,8 +30,8 @@ export async function POST(req: Request) {
       email,
       createdAt: new Date(),
     });
-    
-    return NextResponse.json({ status: "created" }, { status: 201 });
+
+    return NextResponse.json({ status: "created", needsPhone: true }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json(
       { message: "Firestore error", error: err.message },

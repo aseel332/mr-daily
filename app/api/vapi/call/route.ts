@@ -1,108 +1,65 @@
 import { NextResponse } from "next/server";
-import { buildAlfredSystemPrompt } from "@/lib/alfred/prompt";
 import { vapi } from "@/lib/vapi";
-import { auth } from "@clerk/nextjs/server";
-
 
 export async function POST(req: Request) {
   const body = await req.json();
-  console.log(body);
+
+  // Hardcoded reminder context
   const userContext = {
     userId: body.clerkId,
-    name: body.name.split(" ")[0],
+    name: "Aseel",
     phoneNumber: body.phoneNumber,
-    callReason: "intro" as const,
+    callReason: "reminder" as const,
   };
 
+  // Hardcoded system prompt for reminder call
+  const systemPrompt = `
+You are Alfred, a calm, reliable, human-like AI voice assistant.
 
-  console.log(body.userId)
-  const systemPrompt = await buildAlfredSystemPrompt({
-    name: userContext.name,
-    userId: body.clerkId,
-    callReason: userContext.callReason,
-  });
+This is a reminder call.
+Do NOT ask questions.
+Do NOT gather information.
+Do NOT create or edit events or todos.
+Do NOT use any tools.
+
+Your only job is to deliver the reminder clearly and naturally.
+
+Message to deliver:
+"Hey Aseel, this is Alfred. Just a quick reminder to start working on your meeting video in about 10 minutes.
+After that, you have your ECS 132 class at 4 PM.
+You’ve got this. I’ll let you get to it."
+
+Speak confidently, friendly, and brief.
+`;
 
   const call = await vapi.calls.create({
-    
     phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID!,
     customer: {
       number: userContext.phoneNumber,
       name: userContext.name,
     },
     assistant: {
-      
       model: {
         provider: "openai",
         model: "gpt-4o",
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_event",
-              description:
-                "Create a calendar event for the user when they mention meetings, classes, deadlines, or reminders with a time.",
-              parameters: {
-                type: "object",
-                properties: {
-                  userId: { type: "string" },
-                  title: { type: "string" },
-                  startTime: { type: "string", description: "ISO string" },
-                  endTime: { type: "string", description: "ISO string" },
-                  location: { type: "string" },
-                  notes: { type: "string" },
-                },
-                required: ["userId", "title", "startTime", "endTime"],
-              },
-            },
-            server:{
-              url: "https://poriferous-ean-unkept.ngrok-free.dev/api/vapi/webhook",
-            }
-          },
-          {
-            type: "function",
-            function: {
-              name: "create_todo",
-              description:
-                "Create a todo/task for the user when they mention something to do, even if no exact time is given.",
-              parameters: {
-                type: "object",
-                properties: {
-                  userId: { type: "string" },
-                  task: { type: "string" },
-                  dueTime: { type: "string", description: "ISO string or null" },
-                  priority: {
-                    type: "string",
-                    enum: ["low", "normal", "high"],
-                  },
-                },
-                required: ["userId", "task"],
-              },
-            },
-            server:{
-              url: "https://poriferous-ean-unkept.ngrok-free.dev/api/vapi/webhook",
-            }
-          },
-        ],
-        temperature: 0.5,
+        temperature: 0.3,
         messages: [
           {
-            role: "system", 
-            content: systemPrompt
-          }
+            role: "system",
+            content: systemPrompt,
+          },
         ],
-        
-        
       },
-
       voice: {
         provider: "vapi",
         voiceId: "Elliot",
       },
-      firstMessage: `Hey ${userContext.name}, it’s Alfred. How can I help you today?`,
-      
+      firstMessage:
+        "Hey Aseel, this is Alfred. Just a quick reminder to start working on your meeting video in about 10 minutes. After that, you have your ECS 132 class at 4 PM.",
     },
-    
   });
 
-  return Response.json({ success: true, callId: call });
+  return NextResponse.json({
+    success: true,
+  });
 }

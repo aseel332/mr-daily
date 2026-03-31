@@ -28,7 +28,10 @@ export async function formatFinalScheduleForAgent(finalSchedule: FinalSchedule |
           startTime: data?.startTime,
           endTime: data?.endTime,
           repeat: data?.repeat,
+          repeatStart: data?.repeatStart ?? null,
+          repeatEnd: data?.repeatEnd ?? null,
           priority: data?.priority,
+          color: data?.color || null,
           isDeleted: data?.isDeleted ?? false,
         });
       } catch (err) {
@@ -51,6 +54,8 @@ export async function formatFinalScheduleForAgent(finalSchedule: FinalSchedule |
           title: data?.task || "Untitled Todo",
           deadline: data?.deadline,
           repeat: data?.repeat,
+          repeatStart: null,
+          repeatEnd: null,
           priority: data?.priority,
           isDeleted: data?.isDeleted ?? false,
         });

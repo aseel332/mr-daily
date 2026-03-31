@@ -13,6 +13,7 @@ import {
 } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export default function Home() {
   const [isCreated, setIsCreated] = useState(false);
@@ -46,8 +47,9 @@ export default function Home() {
         }),
       });
 
-      if (response.status === 201) {
-        setNeedPhone(true);
+      const data = await response.json();
+      if (data.needsPhone) {
+        router.push("/home?onboarding=true");
       } else {
         router.push("/home");
       }
@@ -65,86 +67,11 @@ export default function Home() {
     if (!checkedSync || pending) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-6">
-          <div className="h-10 w-10 rounded-full border-4 border-black border-t-transparent animate-spin" />
+          <div className="h-10 w-10 rounded-full border-4 border-black border-t-transparent animate-spin dark:border-white dark:border-t-transparent" />
           <p className="text-sm text-muted-foreground">
             Setting things up…
           </p>
         </div>
-      );
-    }
-
-    // PHONE COLLECTION SCREEN
-    if (needPhone) {
-      return (
-        <>
-          <header className="bg-black flex justify-between items-center p-4 h-16">
-            <span className="font-bold text-lg">Alfred</span>
-            <UserButton />
-          </header>
-
-          <main>
-            <div className="flex flex-col items-center justify-center p-10">
-              <h1 className="text-4xl font-bold mb-2">Almost there!</h1>
-              <p className="text-lg mb-6">
-                Please provide your phone number to enable call features.
-              </p>
-
-              <form
-                className="flex flex-col gap-4 w-64"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setSavingPhone(true);
-
-                  const formData = new FormData(e.currentTarget);
-                  let phone = String(formData.get("phoneNumber") || "");
-
-                  // Remove spaces, dashes, parentheses
-                  phone = phone.replace(/[^\d]/g, "");
-
-                  // Prefix +1 if not already included
-                  if (!phone.startsWith("1")) {
-                    phone = "1" + phone;
-                  }
-
-                  phone = "+" + phone;
-
-                  const response = await fetch("/api/save-phone", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${await getToken()}`,
-                    },
-                    body: JSON.stringify({
-                      phoneNumber: phone,
-                      userId: user.id,
-                    }),
-                  });
-
-                  setSavingPhone(false);
-
-                  if (response.ok) {
-                    router.push("/home");
-                  }
-                }}
-              >
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  placeholder="5551234567"
-                  required
-                  className="p-2 border rounded"
-                />
-
-                <Button
-                  type="submit"
-                  disabled={savingPhone}
-                >
-                  {savingPhone ? "Saving…" : "Submit"}
-                </Button>
-              </form>
-            </div>
-          </main>
-        </>
       );
     }
 
@@ -156,16 +83,21 @@ export default function Home() {
   // -----------------------------
   return (
     <>
-      <header className="bg-black flex justify-between items-center p-4 h-16">
-        <span className="font-bold text-lg">Alfred</span>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border flex justify-between items-center px-6 h-16">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-bold text-xl dark:bg-white dark:text-black">
+            A
+          </div>
+          <span className="font-bold text-xl tracking-tight">Alfred</span>
+        </div>
 
         <div className="flex items-center gap-4">
           <SignedOut>
-            <SignInButton>
-              <Button>Sign In</Button>
+            <SignInButton mode="modal">
+              <Button variant="ghost" className="font-semibold">Sign In</Button>
             </SignInButton>
-            <SignUpButton>
-              <Button>Sign Up</Button>
+            <SignUpButton mode="modal">
+              <Button className="font-semibold rounded-full px-6">Get Started</Button>
             </SignUpButton>
           </SignedOut>
 
@@ -175,11 +107,8 @@ export default function Home() {
         </div>
       </header>
 
-      <main>
-        <div className="flex flex-col items-center justify-center p-20">
-          <h1 className="text-4xl font-bold mb-2">Introducing Alfred</h1>
-          <p className="text-lg">Your personal AI agent for everything</p>
-        </div>
+      <main className="pt-16">
+        <LandingPage />
       </main>
     </>
   );
