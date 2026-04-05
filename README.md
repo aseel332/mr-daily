@@ -2,6 +2,8 @@
 
 Alfred is an AI-powered personal assistant that helps you **instantly create, manage, and adapt your schedule through natural conversation**. Instead of manually organizing tasks across multiple apps, you simply talk to Alfred — and it handles the rest.
 
+Video Link 🔗: https://youtu.be/VkQwMyP7-Y8
+
 ---
 
 ## 🚀 Problem
